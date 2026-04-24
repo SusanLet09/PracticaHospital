@@ -51,6 +51,7 @@ public class Paciente {
     @Column(name = "num_expediente", nullable = false, length = 20)
     private String numExpediente;
 
+   
     @Column(name = "telefono", nullable = false, length = 10)
     private String telefono;
 
@@ -63,7 +64,8 @@ public class Paciente {
     private EstadoRegistro estadoRegistro;
 
 
-    public  void actualizar(String nombre, String apellidoPaterno, String apellidoMaterno, Short edad, Double peso, Double estatura, String email, String telefono, String direccion) {
+    public  void actualizar(String nombre, String apellidoPaterno, String apellidoMaterno, Short edad, Double peso, Double estatura, 
+    		String email, String telefono, String direccion) {
 
         this.nombre = nombre;
         this.apellidoPaterno = apellidoPaterno;
@@ -82,7 +84,9 @@ public class Paciente {
     public double calcularImc() {
     	return this.peso / (this.estatura * this.estatura );
     }
+    
     public String generarNumExpediente() {
+    	
     	StringBuilder expediente = new StringBuilder();
     	
     	for (char c : this.telefono.toCharArray())

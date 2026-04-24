@@ -1,6 +1,7 @@
 package com.susana.pacientes.services;
 
 
+import com.susana.commons.clients.CitasClient;
 import com.susana.commons.dto.PacienteRequest;
 import com.susana.commons.dto.PacienteResponse;
 import com.susana.pacientes.entities.Paciente;
@@ -26,6 +27,8 @@ public class PacienteServiceImpl implements PacienteService{
     private final PacienteRepository pacienteRepository;
 
     private final PacienteMapper pacienteMapper;
+    
+    private final CitasClient citasClient;
 
 
     @Override
@@ -33,11 +36,14 @@ public class PacienteServiceImpl implements PacienteService{
     
     public List<PacienteResponse> listar() {
     	
+		log.info("Listado de todas las citas activas solicitadas");
+    	
     	
         return pacienteRepository.findByEstadoRegistro(EstadoRegistro.ACTIVO)
                 .stream()
                 .map(pacienteMapper::entidadAResponse)
                 .toList();
+   
     }
     
     
@@ -63,19 +69,21 @@ public class PacienteServiceImpl implements PacienteService{
     @Override
     public PacienteResponse registrar(PacienteRequest request) {
 
-        log.info("Registrando nuevo paciente...", request.nombre());
+        log.info("Registrando nuevo paciente...");
 
         validarEmailUnico(request.email());
         validarTelefonoUnico(request.telefono());
 
         Paciente paciente = pacienteMapper.requestAEntidad(request);
         
-        
-        paciente.setNumExpediente(paciente.getNumExpediente());
         paciente.setImc(paciente.calcularImc());
-
+        paciente.setNumExpediente(paciente.generarNumExpediente());
+        
+        log.info("Telefono: {}", paciente.getTelefono());
+        log.info("Expediente generado: {}", paciente.getNumExpediente());
         
         pacienteRepository.save(paciente);
+        
         log.info("Paciente registrado con esto: {}", paciente.getNombre());
         return pacienteMapper.entidadAResponse(paciente);
         
@@ -88,35 +96,35 @@ public class PacienteServiceImpl implements PacienteService{
     
     public PacienteResponse actualizar(PacienteRequest request, Long id) {
 
-        Paciente paciente = obtenerPacienteActivo0Exception(id);
-        
-        log.info("Actualizando Paciente: {}", paciente.getNombre());
+    	Paciente paciente = obtenerPacienteActivo0Exception(id);
+   	 
+   	 pacienteTieneCitasAsignadas(id);
+   	
+   	log.info("Actualizando paciente : {} ", paciente.getNombre());
+   	
 
-        validarCambiosUnicos(request, id);
+       validarCambiosUnicos(request, id);
 
-        paciente.actualizar(
-                request.nombre(),
-                request.apellidoPaterno(),
-                request.apellidoMaterno(),
-                request.edad(),
-                request.peso(),
-                request.estatura(),
-                request.email(),
-                request.telefono(),
-                request.direccion()
+       paciente.actualizar(
+               request.nombre(),
+               request.apellidoPaterno(),
+               request.apellidoMaterno(),
+               request.edad(),
+               request.peso(),
+               request.estatura(),
+               request.email(),
+               request.telefono(),
+               request.direccion()
                
-        );
+       );
 
-        paciente.setImc(paciente.calcularImc());
-        paciente.setNumExpediente(generarExpediente(request.telefono()));
+       paciente.setImc(paciente.calcularImc());
+       paciente.setNumExpediente(paciente.generarNumExpediente());
 
-        Paciente actualizado = pacienteRepository.save(paciente);
 
-        log.info("Paciente {} actualizado correctamente",
-                actualizado.getNombre());
+       log.info("Paciente actualizado con éxito: {}", paciente.getNombre());
 
-        return pacienteMapper.entidadAResponse(actualizado);
-
+       return pacienteMapper.entidadAResponse(paciente);
     }
 
     
@@ -129,13 +137,12 @@ public class PacienteServiceImpl implements PacienteService{
         Paciente paciente = obtenerPacienteActivo0Exception(id);
         
         log.info("Eliminando Paciente con id: {} ", id);
+        
+        pacienteTieneCitasAsignadas(id);
 
-        if(paciente.getEstadoRegistro()== EstadoRegistro.ELIMINADO){
-            throw  new IllegalArgumentException("El paciente ya esta eliminado");
-
-        }
+ 
         paciente.setEstadoRegistro(EstadoRegistro.ELIMINADO);
-        pacienteRepository.delete(paciente);
+       
         log.info("El paciente con el id {} eliminado", id);
         
         
@@ -143,18 +150,19 @@ public class PacienteServiceImpl implements PacienteService{
 
 
     }
-    private String generarExpediente(String telefono){
+  /*  private String generarExpediente(String telefono){
         String ultimos4 = telefono.substring(telefono.length() - 4);
         long tiempo = System.currentTimeMillis() % 1000000;
 
         return "PAC" + ultimos4 + tiempo;
 
 
-    }
+    }*/
     private Paciente obtenerPacienteActivo0Exception (Long id){
         return pacienteRepository.findByIdAndEstadoRegistro(id, EstadoRegistro.ACTIVO)
                 .orElseThrow(()-> new RecursoNoEncontradoExceptions("Paciente no encontrado"));
     }
+    
     private void validarEmailUnico(String email) {
 
         log.info("Validando email único...");
@@ -219,4 +227,9 @@ public class PacienteServiceImpl implements PacienteService{
             );
         }
     }
+    private void pacienteTieneCitasAsignadas(Long id) {
+    	citasClient.pacienteTieneCitasAsignadas(id);
+    }
+  
+    
 }

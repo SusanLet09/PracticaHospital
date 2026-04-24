@@ -1,0 +1,56 @@
+package com.susana.citas.controllers;
+
+import com.susana.citas.dto.CitaResponse;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.susana.citas.dto.CitaRequest;
+import com.susana.citas.services.CitaService;
+import com.susana.commons.controllers.CommonController;
+
+import jakarta.validation.constraints.Positive;
+
+@RestController
+@Validated 
+
+public class CitaController extends CommonController<CitaRequest, CitaResponse, CitaService> {
+
+	public CitaController(CitaService service) {
+		super(service);
+	}
+	
+	
+	@PatchMapping("/{idCita}/estado/{idEstado}")
+	public ResponseEntity<Void> actualizarEstadoCita(
+			@PathVariable @Positive(message = "El idCita debe ser positivo") Long idCita,
+			@PathVariable @Positive(message = "El idEstado debe ser positivo") Long idEstado) {
+		
+		service.actualizarEstadoCita(idCita, idEstado);
+		return ResponseEntity.noContent().build();
+	}
+	
+	@GetMapping("/id-medico/{idMedico}/citas-asignadas")
+	public ResponseEntity<Void> medicoTieneCitasAsignadas(
+			@PathVariable @Positive(message = "El idMedico debe ser positivo") Long idMedico) {
+		
+		service.medicoTieneCitasAsignadas(idMedico);
+		return ResponseEntity.noContent().build();
+	}
+	
+	@GetMapping("/id-paciente/{idPaciente}/citas-asignadas")
+	public ResponseEntity<Void> pacienteTieneCitasAsignadas(
+			@PathVariable @Positive(message = "El idPaciente debe ser positivo") Long idPaciente) {
+		
+		service.pacienteTieneCitasAsignadas(idPaciente);
+		return ResponseEntity.noContent().build();
+	}
+
+	
+
+           
+}

@@ -36,11 +36,11 @@ public record PacienteRequest(
         Double estatura,
 
         @NotBlank(message = "El email es obligatorio")
-        @Email(message = "Formato de email inválido")
+        @Size(max= 100, message = "El email no puede exceder 100 caracteres")
         String email,
 
         @NotBlank(message = "El teléfono es obligatorio")
-        @Pattern(regexp = "\\d{10}", message = "El teléfono debe tener exactamente 10 dígitos")
+        @Pattern(regexp = "^[0-9]{10}$", message = "El teléfono debe contener exactamente 10 dígitos numéricos")
         String telefono,
 
         @NotBlank(message = "La dirección es obligatoria")

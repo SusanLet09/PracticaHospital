@@ -2,6 +2,8 @@ package com.susana.medicos.services;
 
 
 
+import com.susana.commons.clients.CitasClient;
+import com.susana.commons.clients.MedicoClient;
 import com.susana.commons.dto.MedicoRequest;
 import com.susana.commons.dto.MedicoResponse;
 import com.susana.commons.enums.DisponibilidadMedico;
@@ -29,6 +31,8 @@ public class MedicoServiceImpl implements MedicoService{
 
 	private final MedicoRepository medicoRepository;
     private final MedicoMapper medicoMapper;
+    private final CitasClient citasClient;
+    private final MedicoClient medicoClient;
 
     @Override
     public List<MedicoResponse> listar() {
@@ -38,7 +42,7 @@ public class MedicoServiceImpl implements MedicoService{
     @Override
     @Transactional(readOnly = true )
     public MedicoResponse obtenerPorId(Long id) {
-    	validarEstadoPorId(EstadoRegistro.ACTIVO, id);
+    	//validarEstadoPorId(EstadoRegistro.ACTIVO, id);
         Medico medico = obtenerMedicoActivoOException(id);
         return medicoMapper.entidadAResponse(medico);
     }
@@ -74,6 +78,11 @@ public class MedicoServiceImpl implements MedicoService{
     @Override
     public MedicoResponse actualizar(MedicoRequest request, Long id) {
         Medico medico = obtenerMedicoActivoOException(id);
+        
+        log.info("Actualizando medico con id: {} ", id);
+        
+        medicoTieneCitasAsignadas(id);
+        
 
         validarActualizarUnicos(request, EstadoRegistro.ACTIVO,id);
         medico.actualizar(
@@ -115,7 +124,10 @@ public class MedicoServiceImpl implements MedicoService{
         Medico medico = obtenerMedicoActivoOException(id);
         log.info("Eliminando Medico con id: {}", id);
         
-        medicoRepository.delete(medico);
+        medicoTieneCitasAsignadas(id);
+        
+  
+   
         log.info("Medico con id: {} ha sido ELIMINADO");
 
         
@@ -134,11 +146,11 @@ public class MedicoServiceImpl implements MedicoService{
                 .toList();
     }
 
-    private void validarEstadoPorId(EstadoRegistro estados, Long id) {
+  /*  private void validarEstadoPorId(EstadoRegistro estados, Long id) {
         log.info("validando estado por id...");
         if (!medicoRepository.existsByEstadoRegistroAndId(estados, id))
             throw new IllegalArgumentException("El medico no se encuetra activo con el id: " + id);
-    }
+    }*/
 
     private void validarEmailPorEstado(String email, EstadoRegistro estados) {
         log.info("validando email por estado...");
@@ -169,5 +181,8 @@ public class MedicoServiceImpl implements MedicoService{
         if (medicoRepository.existsByCedulaProfesionalAndIdNotAndEstadoRegistro(request.cedulaProfesional(),id , EstadoRegistro.ACTIVO))
         	throw new IllegalArgumentException("Ya existe un medico con la cedula profesional: " + request.telefono());
         
+    }
+    private void medicoTieneCitasAsignadas(Long id) {
+    	citasClient.medicoTieneCitasAsignadas(id);
     }
 }

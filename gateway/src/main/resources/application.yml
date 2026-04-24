@@ -3,26 +3,38 @@ spring:
     name: gateway
 
   cloud:
-    gateway:
-      routes:
-        - id: msv-pacientes
-          uri: lb://msv-pacientes
-          predicates:
-            - Path=/api/pacientes/**
-          filters:
-            - StripPrefix=2
+    loadbalancer:
+      enabled: true
 
-        - id: msv-medicos
-          uri: lb://msv-medicos
-          predicates:
-            - Path=/api/medicos/**
-          filters:
-            - StripPrefix=2
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: msv-pacientes
+              uri: lb://msv-pacientes
+              predicates:
+               - Path=/api/pacientes/**
+              filters:
+               - StripPrefix=2
+
+            - id: msv-medicos
+              uri: lb://msv-medicos
+              predicates:
+                - Path=/api/medicos/**
+              filters:
+                - StripPrefix=2
+
+            - id: mvs-citas
+              uri: lb://mvs-citas
+              predicates:
+                - Path=/api/citas/**
+              filters:
+                - StripPrefix=2
 
 server:
-  port: 8090
+ port: 8090
 
 eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka
+ client:
+  service-url:
+   defaultZone: http://localhost:8761/eureka
